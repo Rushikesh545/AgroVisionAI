@@ -360,7 +360,7 @@
     </footer>
 
     <script>
-        // --- 1. Parallax & Scroll Animations ---
+        // --- 1. Parallax & Scroll Animations --- 
         window.addEventListener('scroll', () => {
             const scroll = window.scrollY;
             const heroContent = document.getElementById('hero-content');
@@ -496,24 +496,83 @@
 
         // Analysis API Call
         async function analyzeImage() {
-            if (!activeFileToAnalyze) return alert("Please capture or upload an image first.");
+    if (!activeFileToAnalyze) {
+        alert("Please capture or upload an image first.");
+        return;
+    }
 
-            const formData = new FormData();
-            formData.append("file", activeFileToAnalyze); 
-            formData.append("lang", document.getElementById("langSwitcher").value); 
+    const formData = new FormData();
+    formData.append("file", activeFileToAnalyze);
 
-            analyzeBtn.disabled = true;
-            const originalBtnText = btnText.innerText;
-            btnText.innerText = "Processing...";
-            loading.classList.remove("hidden");
-            
-            resultEmpty.style.opacity = "0.5";
+    analyzeBtn.disabled = true;
+    const originalBtnText = btnText.innerText;
+    btnText.innerText = "Processing...";
+    loading.classList.remove("hidden");
+
+    try {
+
+        const response = await fetch(
+            "https://agrovisionai-production.up.railway.app/predict",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Server Error");
+        }
+
+        const data = await response.json();
+
+        document.getElementById("disease").innerText =
+            data.prediction.disease;
+
+        const confValue =
+            (data.prediction.confidence * 100).toFixed(1);
+
+        document.getElementById("confidence").innerText =
+            confValue;
+
+        confidenceBar.style.width = `${confValue}%`;
+
+        document.getElementById("cause").innerText =
+            data.details.cause;
+
+        document.getElementById("treatment").innerText =
+            data.details.treatment;
+
+        document.getElementById("prevention").innerText =
+            data.details.prevention;
+
+        const severityElement =
+            document.getElementById("severity");
+
+        severityElement.innerText =
+            data.prediction.severity;
+
+        resultEmpty.classList.add("hidden");
+        resultContent.classList.remove("hidden");
+        resultContent.classList.add("flex");
+
+    } catch (error) {
+        console.error(error);
+        alert("Prediction failed. Please try again.");
+    } finally {
+        analyzeBtn.disabled = false;
+        btnText.innerText = originalBtnText;
+        loading.classList.add("hidden");
+    }
+
 
             try {
-                const response = await fetch("http://localhost:8080/api/analyze", {
-                    method: "POST",
-                    body: formData
-                });
+                const response = await fetch(
+    "https://agrovisionai-production.up.railway.app/predict",
+    {
+        method: "POST",
+        body: formData
+    }
+);
 
                 if (!response.ok) throw new Error("Server error");
                 const data = await response.json();
